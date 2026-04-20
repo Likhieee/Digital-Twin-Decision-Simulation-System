@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Results – DecisionSim</title>
+  <link rel="stylesheet" th:href="@{/css/app.css}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"/>
+  <style>
+    .winner-card {
+      background: linear-gradient(135deg, rgba(104,211,145,0.08) 0%, rgba(99,179,237,0.06) 100%);
+      border: 1px solid rgba(104,211,145,0.3) !important;
+      position: relative; overflow: hidden;
+    }
+    .winner-card::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(104,211,145,0.12), transparent 70%);
+    }
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<div class="page-wrapper">
+
+  <ol class="breadcrumb">
+    <li><a th:href="@{/scenarios}">Scenarios</a></li>
+    <li><a th:href="@{/scenarios/{id}(id=${scenario.id})}" th:text="${scenario.title}"></a></li>
+    <li>Results</li>
+  </ol>
+
+  <div th:if="${successMsg}" class="alert alert-success"><i class="bi bi-check-circle"></i><span th:text="${successMsg}"></span><button class="alert-close">×</button></div>
+
+  <!-- Winner Banner -->
+  <div th:if="${topResult}" class="glass-card winner-card animate-fade-up mb-6" style="padding:28px">
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <div style="text-align:center;flex-shrink:0">
+        <div style="font-size:2.8rem;line-height:1">🏆</div>
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent-3);font-family:'Space Grotesk',sans-serif;line-height:1.1" th:text="${topResult.scoreFormatted}"></div>
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Score</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent-3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Top Recommendation</div>
+        <h2 style="font-size:1.6rem;margin-bottom:8px" th:text="${topResult.option.name}"></h2>
+        <span class="badge badge-success" th:text="${topResult.outcome}"></span>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-top:8px;margin-bottom:0" th:text="${scenario.title}"></p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a th:href="@{/reports/{id}(id=${run.id})}" class="btn btn-primary"><i class="bi bi-file-earmark-bar-graph"></i> Full Report</a>
+        <a th:href="@{/scenarios/{id}(id=${scenario.id})}" class="btn btn-ghost btn-sm"><i class="bi bi-arrow-left"></i> Back to Scenario</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ranked Results -->
+  <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+    <i class="bi bi-bar-chart" style="color:var(--accent)"></i> Ranked Results
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+  </div>
+
+  <div class="grid-3 mb-6">
+    <div th:each="result : ${results}" class="glass-card glass-card-lift animate-fade-up"
+         th:classappend="${result.rank == 1} ? ' rank-card-1' : (${result.rank == 2} ? ' rank-card-2' : ' rank-card-3')"
+         style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:4px">
+            <span th:if="${result.rank == 1}" class="trophy">🥇</span>
+            <span th:if="${result.rank == 2}" class="trophy">🥈</span>
+            <span th:if="${result.rank == 3}" class="trophy">🥉</span>
+            Rank #<span th:text="${result.rank}"></span>
+          </div>
+          <h3 style="font-size:1rem;font-weight:700" th:text="${result.option.name}"></h3>
+        </div>
+        <div style="text-align:center;flex-shrink:0">
+          <div style="font-size:1.6rem;font-weight:800;font-family:'Space Grotesk',sans-serif;line-height:1"
+               th:class="${result.rank == 1} ? 'rank-badge-1' : (${result.rank == 2} ? 'rank-badge-2' : 'rank-badge-3')"
+               th:text="${result.scoreFormatted}"></div>
+          <div style="font-size:10px;color:var(--text-dim)">/ 100</div>
+        </div>
+      </div>
+
+      <!-- Score bar -->
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-muted);margin-bottom:5px">
+          <span>Score</span><span th:text="${result.scoreFormatted} + ' / 100'"></span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill"
+               th:classappend="${result.outcomeBadgeClass == 'success'} ? ' green' : (${result.outcomeBadgeClass == 'warning'} ? ' yellow' : (${result.outcomeBadgeClass == 'danger'} ? ' red' : '')"
+               th:attr="data-width=${result.score}"
+               style="width:0%"></div>
+        </div>
+      </div>
+
+      <span class="badge"
+            th:class="${result.outcomeBadgeClass == 'success'} ? 'badge badge-success' : (${result.outcomeBadgeClass == 'warning'} ? 'badge badge-warning' : (${result.outcomeBadgeClass == 'danger'} ? 'badge badge-danger' : 'badge badge-info'))"
+            th:text="${result.outcome}" style="margin-bottom:12px"></span>
+
+      <!-- Breakdown toggle -->
+      <button class="btn btn-ghost btn-sm w-full" data-collapse th:attr="data-collapse='expl-' + ${result.id}">
+        <i class="bi bi-calculator"></i> Score Breakdown
+        <i class="bi bi-chevron-down collapse-icon" style="margin-left:auto;font-size:10px;transition:transform .2s"></i>
+      </button>
+      <div th:id="'expl-' + ${result.id}" class="collapse">
+        <pre style="margin-top:10px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;font-size:11.5px;color:var(--text-muted);white-space:pre-wrap;line-height:1.7" th:text="${result.explanation}"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attribute Comparison Table -->
+  <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+    <i class="bi bi-table" style="color:var(--accent-2)"></i> Attribute Comparison
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+  </div>
+  <div class="glass-card animate-fade-up mb-4" style="overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th th:each="p : ${scenario.priorities}" th:text="${p.label}"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="opt : ${scenario.options}">
+            <td style="font-weight:600" th:text="${opt.name}"></td>
+            <td th:each="p : ${scenario.priorities}" th:text="${opt.getAttributeValue(p.attributeName)}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--text-dim);margin-top:8px">
+    <i class="bi bi-clock" style="margin-right:4px"></i>
+    Simulation run on <span th:text="${#temporals.format(run.runAt,'dd MMM yyyy, HH:mm')}"></span>
+    <span th:if="${run.notes}" style="margin-left:8px">· <em th:text="${run.notes}"></em></span>
+  </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
